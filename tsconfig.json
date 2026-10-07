@@ -3,7 +3,6 @@
     "target": "ES2022",
     "module": "commonjs",
     "moduleResolution": "node",
-    "ignoreDeprecations": "6.0",
     "lib": ["ES2022"],
     "outDir": "dist",
     "rootDir": "src",
@@ -16,7 +15,8 @@
     "sourceMap": false,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noImplicitReturns": true
+    "noImplicitReturns": true,
+    "types": ["node", "jest"]
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
