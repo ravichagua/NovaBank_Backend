@@ -6,11 +6,6 @@ on:
       - main
     paths:
       - "**"
-  push:
-    branches:
-      - dev
-    paths:
-      - "**"
 
 permissions:
   contents: read
