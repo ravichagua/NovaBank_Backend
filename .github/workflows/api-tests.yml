@@ -8,8 +8,7 @@ on:
       - "**"
   push:
     branches:
-      - tests
-      - main
+      - dev
     paths:
       - "**"
 
