@@ -78,7 +78,8 @@
       "src/**/*.ts",
       "!src/index.ts",
       "!src/**/*.d.ts",
-      "!src/assets/**"
+      "!src/assets/**",
+      "!src/scripts/**"
     ],
     "coverageDirectory": "coverage",
     "coverageReporters": [
