@@ -1,0 +1,31 @@
+name: API - smoke test
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "**"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      API_BASE_URL: ${{ vars.API_BASE_URL }}
+
+    steps:
+      - name: Verificar endpoint de salud
+        run: |
+          test -n "$API_BASE_URL"
+          curl --fail --silent --show-error --retry 10 --retry-delay 5 \
+            "$API_BASE_URL/health"
+
+      - name: Verificar conexión con la base de datos
+        run: |
+          curl --fail --silent --show-error \
+            "$API_BASE_URL/health/db"

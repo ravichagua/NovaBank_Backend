@@ -15,6 +15,28 @@ npm run dev                          # http://localhost:3000
 Copia `.env.example` a `.env` y completa los valores (ya existe un `.env` local
 con las credenciales de desarrollo — **no se sube a git**, está en `.gitignore`).
 
+## Pruebas automatizadas
+
+La rama `tests` incluye pruebas unitarias con Jest y mocks. Para ejecutar el
+conjunto de pruebas y generar cobertura:
+
+```bash
+npm ci
+npm run typecheck
+npm run test:ci
+npm run build
+```
+
+El workflow `API - pruebas` de GitHub Actions ejecuta estas comprobaciones,
+aplica las migraciones sobre un PostgreSQL temporal y después compila la API.
+El workflow `API - smoke test` comprueba `/health` y `/health/db` después del
+despliegue. Para habilitarlo, crea en el entorno `production` de GitHub Actions
+la variable `API_BASE_URL` con la URL pública de la API, por ejemplo:
+
+```text
+https://novabank-api.onrender.com
+```
+
 ## Endpoints implementados
 
 | Método | Ruta               | Descripción                              | Auth |

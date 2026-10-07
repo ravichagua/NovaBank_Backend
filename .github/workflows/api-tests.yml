@@ -1,0 +1,74 @@
+name: API - pruebas
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "**"
+  push:
+    branches:
+      - dev
+    paths:
+      - "**"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: novabank
+          POSTGRES_PASSWORD: novabank
+          POSTGRES_DB: novabank_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U novabank -d novabank_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DATABASE_URL: postgresql://novabank:novabank@localhost:5432/novabank_test
+      NODE_ENV: test
+      JWT_ACCESS_SECRET: "test-access-secret-32-characters-long"
+      JWT_REFRESH_SECRET: "test-refresh-secret-32-characters"
+      JWT_ACCESS_TTL: "15m"
+      JWT_REFRESH_TTL: "30d"
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      CORS_ORIGIN: "http://localhost:8081"
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Generar cliente Prisma
+        run: npx prisma generate
+
+      - name: Aplicar migraciones de prueba
+        run: npx prisma migrate deploy
+
+      - name: Comprobar tipos TypeScript
+        run: npm run typecheck
+
+      - name: Ejecutar pruebas unitarias
+        run: npm run test:ci
+
+      - name: Compilar aplicación
+        run: npm run build
