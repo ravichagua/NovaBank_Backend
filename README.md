@@ -90,3 +90,5 @@ móvil, no aquí.
 sesión se compartió en texto plano en el chat. Se recomienda rotarla desde el
 panel de Neon una vez termines de configurar todo, y usar siempre variables de
 entorno (nunca commitear `.env`).
+
+> Texto de prueba
