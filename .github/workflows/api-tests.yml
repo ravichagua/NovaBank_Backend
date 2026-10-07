@@ -8,8 +8,7 @@ on:
       - "**"
   push:
     branches:
-      - tests
-      - main
+      - dev
     paths:
       - "**"
 
@@ -38,12 +37,12 @@ jobs:
     env:
       DATABASE_URL: postgresql://novabank:novabank@localhost:5432/novabank_test
       NODE_ENV: test
-      JWT_ACCESS_SECRET: test-access-secret
-      JWT_REFRESH_SECRET: test-refresh-secret
-      JWT_ACCESS_TTL: 15m
-      JWT_REFRESH_TTL: 30d
-      ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000000
-      CORS_ORIGIN: http://localhost:8081
+      JWT_ACCESS_SECRET: "test-access-secret-32-characters-long"
+      JWT_REFRESH_SECRET: "test-refresh-secret-32-characters"
+      JWT_ACCESS_TTL: "15m"
+      JWT_REFRESH_TTL: "30d"
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      CORS_ORIGIN: "http://localhost:8081"
 
     steps:
       - name: Descargar código

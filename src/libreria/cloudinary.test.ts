@@ -7,6 +7,14 @@ jest.mock("cloudinary", () => ({
   },
 }));
 
+jest.mock("../configuracion/entorno", () => ({
+  env: {
+    CLOUDINARY_CLOUD_NAME: "test-cloud",
+    CLOUDINARY_API_KEY: "test-key",
+    CLOUDINARY_API_SECRET: "test-secret",
+  },
+}));
+
 import { subirReferenciaFacial } from "./cloudinary";
 
 describe("almacenamiento de referencias faciales", () => {

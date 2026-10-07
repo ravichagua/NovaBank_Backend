@@ -2,7 +2,7 @@ name: API - smoke test
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
     branches:
       - main
     paths:
