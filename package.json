@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json && node -e \"require('fs').cpSync('src/assets','dist/assets',{recursive:true})\" && prisma generate",
+    "build": "tsc -p tsconfig.build.json && node -e \"require('fs').cpSync('src/assets','dist/assets',{recursive:true})\" && prisma generate",
     "start": "node dist/index.js",
     "postinstall": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
@@ -15,6 +15,8 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "cleanup": "tsx src/scripts/limpieza.ts",
     "test": "jest",
+    "test:ci": "jest --runInBand --coverage",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "coverage": "jest --coverage"
   },
   "prisma": {
