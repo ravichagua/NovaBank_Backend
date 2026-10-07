@@ -1,0 +1,255 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique @map("correo")
+  phone     String?  @unique @map("telefono")
+  dni       String?  @unique
+  fullName  String   @map("nombre_completo")
+  passwordHash String @map("contrasena_hash")
+
+  isActive  Boolean  @default(true) @map("esta_activo")
+
+  // Bloqueo de cuenta por fuerza bruta
+  failedLoginAttempts Int       @default(0) @map("intentos_fallidos")
+  lockedUntil         DateTime? @map("bloqueado_hasta")
+
+  // Preferencias de notificación
+  alertPurchase Boolean @default(true)  @map("alerta_compra")
+  alertWithdraw Boolean @default(true)  @map("alerta_retiro")
+  alertLogin    Boolean @default(true)  @map("alerta_login")
+  alertPromo    Boolean @default(false) @map("alerta_promo")
+
+  refreshTokens RefreshToken[]
+  loginEvents   LoginEvent[]
+  faceReference FaceReference?
+  account       Account?
+  auditLogs     AuditLog[]
+
+  createdAt DateTime @default(now()) @map("creado_en")
+  updatedAt DateTime @updatedAt @map("actualizado_en")
+
+  @@map("usuarios")
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String    @map("usuario_id")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Nunca se guarda el token en crudo, solo su hash
+  tokenHash  String    @unique @map("token_hash")
+
+  userAgent  String?   @map("agente_usuario")
+  ip         String?
+
+  expiresAt  DateTime  @map("expira_en")
+  revokedAt  DateTime? @map("revocado_en")
+  replacedByTokenHash String? @map("reemplazado_por_token_hash")
+
+  createdAt  DateTime  @default(now()) @map("creado_en")
+
+  @@index([userId])
+  @@map("tokens_renovacion")
+}
+
+enum LoginEventResult {
+  SUCCESS
+  INVALID_CREDENTIALS
+  ACCOUNT_LOCKED
+  ACCOUNT_INACTIVE
+
+  @@map("resultado_inicio_sesion")
+}
+
+model LoginEvent {
+  id        String            @id @default(uuid())
+  userId    String?           @map("usuario_id")
+  user      User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email     String            @map("correo")
+  result    LoginEventResult  @map("resultado")
+  ip        String?
+  userAgent String?           @map("agente_usuario")
+  createdAt DateTime          @default(now()) @map("creado_en")
+
+  @@index([userId])
+  @@index([email])
+  @@map("eventos_inicio_sesion")
+}
+
+enum OtpPurpose {
+  REGISTER
+  PASSWORD_RESET
+  PROFILE_UPDATE
+
+  @@map("proposito_otp")
+}
+
+model EmailOtp {
+  id         String     @id @default(uuid())
+  email      String     @map("correo")
+  purpose    OtpPurpose @map("proposito")
+
+  // Nunca se guarda el código en crudo, solo su hash
+  codeHash   String     @map("codigo_hash")
+  attempts   Int        @default(0) @map("intentos")
+
+  expiresAt  DateTime   @map("expira_en")
+  consumedAt DateTime?  @map("consumido_en")
+  createdAt  DateTime   @default(now()) @map("creado_en")
+
+  @@index([email, purpose])
+  @@map("codigos_verificacion")
+}
+
+model BloqueoOtp {
+  id             String     @id @default(uuid())
+  correo         String
+  proposito      OtpPurpose
+  intentos       Int        @default(0)
+  bloqueadoHasta DateTime?  @map("bloqueado_hasta")
+  actualizadoEn  DateTime   @updatedAt @map("actualizado_en")
+
+  @@unique([correo, proposito])
+  @@map("bloqueos_otp")
+}
+
+model FaceReference {
+  id              String   @id @default(uuid())
+  userId          String   @unique @map("usuario_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dniPhotoUrl     String   @map("foto_dni_url")
+  selfiePhotoUrl  String   @map("foto_selfie_url")
+  createdAt       DateTime @default(now()) @map("creado_en")
+  updatedAt       DateTime @updatedAt @map("actualizado_en")
+
+  @@map("referencias_faciales")
+}
+
+model FaceVerificationEvent {
+  id           String   @id @default(uuid())
+  dni          String
+  matched      Boolean  @map("coincidio")
+  confidence   Float    @map("confianza")
+  errorMessage String?  @map("mensaje_error")
+  ip           String?
+  userAgent    String?  @map("agente_usuario")
+  createdAt    DateTime @default(now()) @map("creado_en")
+
+  @@index([dni])
+  @@map("eventos_verificacion_facial")
+}
+
+model Account {
+  id               String   @id @default(uuid())
+  userId           String   @unique @map("usuario_id")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  accountNumber    String   @unique @map("numero_cuenta")
+  cci              String   @unique
+  cardNumber       String   @map("numero_tarjeta")
+  cardExpiry       String   @map("vencimiento_tarjeta")
+  cardCvv          String   @map("cvv_tarjeta")
+
+  availableBalance Decimal  @default(1500) @db.Decimal(12, 2) @map("saldo_disponible")
+  heldBalance      Decimal  @default(0) @db.Decimal(12, 2) @map("saldo_retenido")
+  creditLine       Decimal  @default(1500) @db.Decimal(12, 2) @map("linea_credito")
+  cardDebt         Decimal  @default(0) @db.Decimal(12, 2) @map("deuda_tarjeta")
+  cutDay           Int      @default(28) @map("dia_corte")
+  cardBlocked      Boolean  @default(false) @map("tarjeta_bloqueada")
+
+  limitOnline      Decimal  @default(1500) @db.Decimal(12, 2) @map("limite_en_linea")
+  limitAtm         Decimal  @default(700)  @db.Decimal(12, 2) @map("limite_cajero")
+  geoPeru          Boolean  @default(true)  @map("geo_peru")
+  geoIntl          Boolean  @default(false) @map("geo_internacional")
+
+  transactions     Transaction[]
+
+  createdAt DateTime @default(now()) @map("creado_en")
+  updatedAt DateTime @updatedAt @map("actualizado_en")
+
+  @@map("cuentas")
+}
+
+enum TransactionKind {
+  CREDIT
+  DEBIT
+
+  @@map("tipo_transaccion")
+}
+
+enum TransactionCategory {
+  COMPRAS
+  TRANSFERENCIAS
+  QR
+  INGRESOS
+  RETIROS
+  SERVICIOS
+  PAGO_TARJETA
+
+  @@map("categoria_transaccion")
+}
+
+model Transaction {
+  id        String              @id @default(uuid())
+  accountId String              @map("cuenta_id")
+  account   Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  kind      TransactionKind     @map("tipo")
+  category  TransactionCategory @map("categoria")
+  name      String              @map("nombre")
+  meta      String
+  amount    Decimal             @db.Decimal(12, 2) @map("monto")
+  icon      String              @map("icono")
+  iconBg    String              @map("icono_fondo")
+  iconFg    String              @map("icono_color")
+
+  createdAt DateTime            @default(now()) @map("creado_en")
+
+  @@index([accountId, createdAt])
+  @@map("transacciones")
+}
+
+enum AuditCategory {
+  SESION
+  TARJETA
+  PERFIL
+
+  @@map("categoria_auditoria")
+}
+
+model AuditLog {
+  id          String        @id @default(uuid())
+  userId      String?       @map("usuario_id")
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  category    AuditCategory @map("categoria")
+  action      String        @map("accion")
+  success     Boolean       @default(true) @map("exitoso")
+
+  description String?       @map("descripcion")
+  metadata    Json?         @map("metadatos")
+
+  screen      String?       @map("pantalla")
+
+  ip          String?
+  country     String?       @map("pais")
+  city        String?       @map("ciudad")
+  device      String?       @map("dispositivo")
+  platform    String?       @map("plataforma")
+  appVersion  String?       @map("version_app")
+
+  createdAt   DateTime      @default(now()) @map("creado_en")
+
+  @@index([userId, createdAt])
+  @@index([category, createdAt])
+  @@index([action])
+  @@map("auditoria")
+}
