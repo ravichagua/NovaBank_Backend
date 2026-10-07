@@ -1,0 +1,42 @@
+import "dotenv/config";
+import { z } from "zod";
+
+const envSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  PORT: z.coerce.number().default(3000),
+  DATABASE_URL: z.string().min(1, "DATABASE_URL es obligatoria"),
+  CORS_ORIGIN: z.string().default(""),
+  JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET debe tener al menos 32 caracteres"),
+  JWT_REFRESH_SECRET: z.string().min(32, "JWT_REFRESH_SECRET debe tener al menos 32 caracteres"),
+  JWT_ACCESS_TTL: z.string().default("15m"),
+  JWT_REFRESH_TTL: z.string().default("30d"),
+  ENCRYPTION_KEY: z.string().length(64, "ENCRYPTION_KEY debe ser un string hexadecimal de 64 caracteres (32 bytes)"),
+  DNI_PROVIDER_TOKEN: z.string().optional(),
+  FACEPP_API_KEY: z.string().optional(),
+  FACEPP_API_SECRET: z.string().optional(),
+  FACEPP_API_BASE: z.string().default("https://api-us.faceplusplus.com"),
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM: z.string().default("NovaBank <onboarding@resend.dev>"),
+  BREVO_API_KEY: z.string().optional(),
+  BREVO_FROM_EMAIL: z.string().optional(),
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
+  PUBLIC_BASE_URL: z.string().optional(),
+});
+
+const parsed = envSchema.safeParse(process.env);
+
+if (!parsed.success) {
+  console.error("Configuración de entorno inválida:", parsed.error.flatten().fieldErrors);
+  process.exit(1);
+}
+
+export const env = {
+  ...parsed.data,
+  corsOrigins: parsed.data.CORS_ORIGIN.split(",").map((o) => o.trim()).filter(Boolean),
+  isProduction: parsed.data.NODE_ENV === "production",
+  // Render expone esta variable sola en cada servicio web — sirve de
+  // respaldo si no se configuró PUBLIC_BASE_URL a mano.
+  publicBaseUrl: parsed.data.PUBLIC_BASE_URL ?? process.env.RENDER_EXTERNAL_URL ?? "https://novabank-api-o6dx.onrender.com",
+};
